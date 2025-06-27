@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APK Uploader to GitHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #3f37c9;
+      --success: #4cc9f0;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --light-gray: #e9ecef;
+      --border-radius: 12px;
+      --box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      width: 100%;
+      max-width: 500px;
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .logo {
+      font-size: 48px;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      color: var(--dark);
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      color: var(--gray);
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+    
+    .upload-area {
+      border: 2px dashed var(--light-gray);
+      border-radius: var(--border-radius);
+      padding: 30px;
+      margin-bottom: 25px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .upload-area:hover {
+      border-color: var(--primary);
+      background: rgba(67, 97, 238, 0.05);
+    }
+    
+    .upload-area i {
+      font-size: 48px;
+      color: var(--primary);
+      margin-bottom: 15px;
+    }
+    
+    .upload-text {
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+    
+    .upload-hint {
+      font-size: 12px;
+      color: var(--gray);
+    }
+    
+    #file {
+      display: none;
+    }
+    
+    .file-info {
+      margin-top: 15px;
+      font-size: 14px;
+      color: var(--dark);
+      display: none;
+    }
+    
+    .file-info i {
+      margin-right: 5px;
+    }
+    
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 500;
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    button:disabled {
+      background: var(--light-gray);
+      color: var(--gray);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    button i {
+      margin-right: 8px;
+    }
+    
+    #progress-container {
+      margin: 25px 0;
+      display: none;
+    }
+    
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: var(--gray);
+    }
+    
+    #progress-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 5px;
+      background: var(--light-gray);
+      overflow: hidden;
+    }
+    
+    #progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--success));
+      transition: width 0.4s ease;
+      border-radius: 5px;
+    }
+    
+    #status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: var(--border-radius);
+      font-size: 14px;
+      display: none;
+    }
+    
+    .status-success {
+      background: rgba(76, 201, 240, 0.1);
+      color: #0a9396;
+      border: 1px solid rgba(76, 201, 240, 0.3);
+    }
+    
+    .status-error {
+      background: rgba(239, 71, 111, 0.1);
+      color: #d00000;
+      border: 1px solid rgba(239, 71, 111, 0.3);
+    }
+    
+    .status-info {
+      background: rgba(255, 196, 61, 0.1);
+      color: #ee9b00;
+      border: 1px solid rgba(255, 196, 61, 0.3);
+    }
+    
+    .github-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--primary);
+      font-weight: 500;
+      text-decoration: none;
+    }
+    
+    .github-link:hover {
+      text-decoration: underline;
+    }
+    
+    @media (max-width: 576px) {
+      .container {
+        padding: 30px 20px;
+      }
+      
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <i class="fas fa-cloud-upload-alt"></i>
+    </div>
+    <h1>Upload APK to GitHub</h1>
+    <p class="subtitle">Easily upload your Android application package to GitHub repository</p>
+    
+    <div class="upload-area" onclick="document.getElementById('file').click()">
+      <i class="fas fa-file-archive"></i>
+      <div class="upload-text">Click to select APK file</div>
+      <div class="upload-hint">or drag and drop file here</div>
+      <input type="file" id="file" accept=".apk">
+    </div>
+    
+    <div class="file-info" id="file-info">
+      <i class="fas fa-file-alt"></i>
+      <span id="file-name"></span>
+      <span id="file-size"></span>
+    </div>
+    
+    <button id="upload-btn" onclick="uploadFile()" disabled>
+      <i class="fas fa-upload"></i> Upload APK
+    </button>
+    
+    <div id="progress-container">
+      <div class="progress-info">
+        <span id="progress-text">Uploading...</span>
+        <span id="progress-percent">0%</span>
+      </div>
+      <div id="progress-bar">
+        <div id="progress-fill"></div>
+      </div>
+    </div>
+    
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const token = "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"; // Replace with your actual GitHub token
+    const repo = "POOP360/NewAxis"; // Your GitHub repo
+    const branch = "main"; // Target branch
+    
+    // File input change handler
+    document.getElementById('file').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const fileInfo = document.getElementById('file-info');
+      const uploadBtn = document.getElementById('upload-btn');
+      
+      if (file) {
+        if (!file.name.endsWith('.apk')) {
+          showStatus('❌ Only .apk files are allowed.', 'error');
+          uploadBtn.disabled = true;
+          fileInfo.style.display = 'none';
+          return;
+        }
+        
+        // Show file info
+        document.getElementById('file-name').textContent = file.name;
+        document.getElementById('file-size').textContent = ` (${formatFileSize(file.size)})`;
+        fileInfo.style.display = 'block';
+        uploadBtn.disabled = false;
+        
+        // Reset status and progress
+        document.getElementById('status').style.display = 'none';
+        document.getElementById('progress-container').style.display = 'none';
+      } else {
+        fileInfo.style.display = 'none';
+        uploadBtn.disabled = true;
+      }
+    });
+    
+    // Format file size
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Show status message
+    function showStatus(message, type = 'info') {
+      const status = document.getElementById('status');
+      status.innerHTML = message;
+      status.className = '';
+      status.classList.add(`status-${type}`);
+      status.style.display = 'block';
+    }
+    
+    // Get SHA of existing file (if it exists)
+    async function getFileSha(filename) {
+      try {
+        const apiUrl = `https://api.github.com/repos/${repo}/contents/${filename}?ref=${branch}`;
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        
+        if (response.status === 200) {
+          const data = await response.json();
+          return data.sha;
+        }
+        return null;
+      } catch (error) {
+        console.error('Error checking file:', error);
+        return null;
+      }
+    }
+    
+    // Upload file to GitHub
+    async function uploadFile() {
+      const fileInput = document.getElementById('file');
+      const file = fileInput.files[0];
+      const uploadBtn = document.getElementById('upload-btn');
+      const progressContainer = document.getElementById('progress-container');
+      const progressFill = document.getElementById('progress-fill');
+      const progressText = document.getElementById('progress-text');
+      const progressPercent = document.getElementById('progress-percent');
+      
+      if (!file) {
+        showStatus('❌ Please select a file first.', 'error');
+        return;
+      }
+      
+      // Disable upload button during upload
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+      
+      // Show progress bar
+      progressContainer.style.display = 'block';
+      progressFill.style.width = '0%';
+      progressPercent.textContent = '0%';
+      progressText.textContent = 'Preparing upload...';
+      
+      showStatus('⏳ Preparing to upload APK file...', 'info');
+      
+      const reader = new FileReader();
+      
+      reader.onloadstart = function() {
+        progressText.textContent = 'Reading file...';
+        showStatus('📖 Reading APK file...', 'info');
+      };
+      
+      reader.onprogress = function(e) {
+        if (e.lengthComputable) {
+          const percentLoaded = Math.round((e.loaded / e.total) * 50);
+          progressFill.style.width = `${percentLoaded}%`;
+          progressPercent.textContent = `${percentLoaded}%`;
+        }
+      };
+      
+      reader.onload = async function(e) {
+        const contentBase64 = e.target.result.split(',')[1];
+        
+        progressText.textContent = 'Checking existing file...';
+        showStatus('🔍 Checking for existing file on GitHub...', 'info');
+        
+        try {
+          // Check if file exists and get its SHA
+          const sha = await getFileSha(file.name);
+          
+          progressText.textContent = 'Uploading to GitHub...';
+          showStatus('📡 Uploading to GitHub repository...', 'info');
+          
+          const apiUrl = `https://api.github.com/repos/${repo}/contents/${file.name}`;
+          const requestBody = {
+            message: `Upload ${file.name}`,
+            content: contentBase64,
+            branch: branch
+          };
+          
+          // Add SHA if file exists (for update)
+          if (sha) {
+            requestBody.sha = sha;
+          }
+          
+          const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify(requestBody)
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok) {
+            progressFill.style.width = '100%';
+            progressPercent.textContent = '100%';
+            progressText.textContent = 'Upload complete!';
+            
+            showStatus(
+              `✅ APK ${sha ? 'updated' : 'uploaded'} successfully!<br>
+
+              Wait for 1 minute before downloading the file, then check.
+
+             
+              </a>`,
+              'success'
+            );
+          } else {
+            throw new Error(data.message || 'Failed to upload file');
+          }
+        } catch (error) {
+          progressFill.style.width = '0%';
+          progressPercent.textContent = '0%';
+          progressText.textContent = 'Upload failed';
+          
+          showStatus(`❌ Error: ${error.message}`, 'error');
+        } finally {
+          uploadBtn.disabled = false;
+          uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload APK';
+        }
+      };
+      
+      reader.onerror = function() {
+        showStatus('❌ Failed to read the APK file.', 'error');
+        progressFill.style.width = '0%';
+        progressPercent.textContent = '0%';
+        progressText.textContent = 'Upload failed';
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload APK';
+      };
+      
+      reader.readAsDataURL(file);
+    }
+    
+    // Drag and drop functionality
+    const uploadArea = document.querySelector('.upload-area');
+    
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = 'var(--primary)';
+      uploadArea.style.backgroundColor = 'rgba(67, 97, 238, 0.05)';
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.style.borderColor = 'var(--light-gray)';
+      uploadArea.style.backgroundColor = 'transparent';
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = 'var(--light-gray)';
+      uploadArea.style.backgroundColor = 'transparent';
+      
+      if (e.dataTransfer.files.length) {
+        document.getElementById('file').files = e.dataTransfer.files;
+        const event = new Event('change');
+        document.getElementById('file').dispatchEvent(event);
+      }
+    });
+  </script>
+</body>
+</html>
