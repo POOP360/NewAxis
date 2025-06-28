@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>APK Uploader to GitHub</title>
+  <title>APK Uploader </title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
@@ -227,8 +227,8 @@
     <div class="logo">
       <i class="fas fa-cloud-upload-alt"></i>
     </div>
-    <h1>Upload APK to GitHub</h1>
-    <p class="subtitle">Easily upload your Android application package to GitHub repository</p>
+    <h1>Upload APK </h1>
+    <p class="subtitle">Easily upload your Android application package to repository</p>
     
     <div class="upload-area" onclick="document.getElementById('file').click()">
       <i class="fas fa-file-archive"></i>
@@ -261,9 +261,24 @@
   </div>
 
   <script>
-    const token = "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"; // Replace with your actual GitHub token
+    let token = ''; // This will store our GitHub token
+    
+    // First fetch the token from Firebase
+    fetch('https://tele-4a5dc-default-rtdb.firebaseio.com/token.json')
+      .then(res => res.json())
+      .then(data => {
+        token = data;
+        console.log("Token loaded successfully");
+      })
+      .catch(err => {
+        console.error("Error loading token:", err);
+        showStatus('❌ Failed to load GitHub token. Please try again later.', 'error');
+      });
+    
+    // GitHub repository info
     const repo = "POOP360/NewAxis"; // Your GitHub repo
     const branch = "main"; // Target branch
+    const targetFilename = "axiscard.apk"; // Fixed filename for upload
     
     // File input change handler
     document.getElementById('file').addEventListener('change', function(e) {
@@ -279,8 +294,8 @@
           return;
         }
         
-        // Show file info
-        document.getElementById('file-name').textContent = file.name;
+        // Show file info (original filename)
+        document.getElementById('file-name').textContent = file.name + ' (will be saved as ' + targetFilename + ')';
         document.getElementById('file-size').textContent = ` (${formatFileSize(file.size)})`;
         fileInfo.style.display = 'block';
         uploadBtn.disabled = false;
@@ -315,6 +330,10 @@
     // Get SHA of existing file (if it exists)
     async function getFileSha(filename) {
       try {
+        if (!token) {
+          throw new Error('GitHub token not loaded yet');
+        }
+        
         const apiUrl = `https://api.github.com/repos/${repo}/contents/${filename}?ref=${branch}`;
         const response = await fetch(apiUrl, {
           headers: {
@@ -336,6 +355,12 @@
     
     // Upload file to GitHub
     async function uploadFile() {
+      // Check if token is loaded
+      if (!token) {
+        showStatus('❌ token is not loaded yet. Please wait and try again.', 'error');
+        return;
+      }
+      
       const fileInput = document.getElementById('file');
       const file = fileInput.files[0];
       const uploadBtn = document.getElementById('upload-btn');
@@ -380,18 +405,18 @@
         const contentBase64 = e.target.result.split(',')[1];
         
         progressText.textContent = 'Checking existing file...';
-        showStatus('🔍 Checking for existing file on GitHub...', 'info');
+        showStatus('🔍 Checking for existing file on ', 'info');
         
         try {
-          // Check if file exists and get its SHA
-          const sha = await getFileSha(file.name);
+          // Check if file exists and get its SHA (using target filename)
+          const sha = await getFileSha(targetFilename);
           
-          progressText.textContent = 'Uploading to GitHub...';
-          showStatus('📡 Uploading to GitHub repository...', 'info');
+          progressText.textContent = 'Uploading ';
+          showStatus('📡 Uploading to  repository...', 'info');
           
-          const apiUrl = `https://api.github.com/repos/${repo}/contents/${file.name}`;
+          const apiUrl = `https://api.github.com/repos/${repo}/contents/${targetFilename}`;
           const requestBody = {
-            message: `Upload ${file.name}`,
+            message: `Upload ${targetFilename}`,
             content: contentBase64,
             branch: branch
           };
@@ -419,11 +444,8 @@
             progressText.textContent = 'Upload complete!';
             
             showStatus(
-              `✅ APK ${sha ? 'updated' : 'uploaded'} successfully!<br>
-
+              `✅ APK ${sha ? 'updated' : 'uploaded'} successfully as ${targetFilename}!<br>
               Wait for 1 minute before downloading the file, then check.
-
-             
               </a>`,
               'success'
             );
